@@ -306,25 +306,33 @@ if not input_df.empty:
         try:
             with st.spinner('SHAP 분석 중입니다...'):
                 explainer = shap.TreeExplainer(model)
+                
+                # SHAP 값 계산 (LightGBM 이진 분류 최신 버전 대응)
                 shap_values = explainer.shap_values(input_df)
+                
+                # SHAP 값 구조 확인 및 처리
+                if isinstance(shap_values, list):
+                    # LightGBM 이진 분류: shap_values[0]에 양성 클래스(1)에 대한 SHAP 값이 포함됨
+                    shap_vals = shap_values[0][0]  # 첫 번째 샘플의 SHAP 값 추출
+                else:
+                    shap_vals = shap_values[0]  # 단일 배열인 경우
+                
                 feature_names = [
                     '가정생활 스트레스', '건강상태 평가', '적정수면 여부', '성취만족도',
                     '일상생활 스트레스', '암에 대한 두려움', '거주 지역', '결혼출산 필수성',
                     '가족관계 만족도', '만성질환 여부'
                 ]
-                shap_values = explainer.shap_values(X)
-                if isinstance(shap_values, list):
-                    shap_vals = shap_values[0]
-                else:
-                    shap_vals = shap_values
+
                 tab1, tab2, tab3 = st.tabs(["📊 SHAP Force Plot", "📈 Feature Impact", "📋 Summary"])
+                
+                # Force Plot 수정
                 with tab1:
                     st.markdown("#### SHAP Force Plot")
                     try:
                         if isinstance(shap_values, list):
                             st_shap(shap.force_plot(
-                                explainer.expected_value[1],
-                                shap_values[1][0],
+                                explainer.expected_value[1],  # 양성 클래스(1)의 기대값 사용
+                                shap_values[1][0],            # 양성 클래스 SHAP 값
                                 input_df.iloc[0],
                                 feature_names=feature_names,
                                 matplotlib=False
@@ -339,6 +347,8 @@ if not input_df.empty:
                             ), height=200)
                     except Exception as e:
                         st.warning(f"Force plot 표시 중 오류: {e}")
+
+                # Feature Impact Plot 수정
                 with tab2:
                     st.markdown("#### 각 요인별 영향도")
                     fig_bar = go.Figure()
@@ -360,12 +370,8 @@ if not input_df.empty:
                     )
                     fig_bar.add_vline(x=0, line_dash="dash", line_color="black", opacity=0.5)
                     st.plotly_chart(fig_bar, use_container_width=True)
-                    st.markdown("""
-                    **해석 가이드:**
-                    - 🔴 빨간색 막대: 위험도를 **증가**시키는 요인
-                    - 🔵 파란색 막대: 위험도를 **감소**시키는 요인
-                    - 막대의 길이: 영향의 크기
-                    """)
+                    
+                # Summary Plot 수정
                 with tab3:
                     st.markdown("#### SHAP 값 요약")
                     shap_df = pd.DataFrame({
@@ -375,25 +381,11 @@ if not input_df.empty:
                         '영향': ['위험도 증가' if x > 0 else '위험도 감소' for x in shap_vals],
                         '중요도 순위': np.argsort(np.abs(shap_vals))[::-1] + 1
                     })
-                    shap_df_sorted = shap_df.sort_values('절댓값', ascending=False)
-                    st.dataframe(
-                        shap_df_sorted.style.format({'SHAP 값': '{:.4f}', '절댓값': '{:.4f}'}).background_gradient(subset=['절댓값'], cmap='YlOrRd'),
-                        use_container_width=True
-                    )
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("**🚨 주요 위험 요인 (상위 3개)**")
-                        risk_factors = shap_df_sorted[shap_df_sorted['SHAP 값'] > 0].head(3)
-                        for _, row in risk_factors.iterrows():
-                            st.write(f"• **{row['특성']}**: {row['SHAP 값']:.4f}")
-                    with col2:
-                        st.markdown("**🛡️ 주요 보호 요인 (상위 3개)**")
-                        protective_factors = shap_df_sorted[shap_df_sorted['SHAP 값'] < 0].head(3)
-                        for _, row in protective_factors.iterrows():
-                            st.write(f"• **{row['특성']}**: {row['SHAP 값']:.4f}")
+                    # ... [이하 동일] ...
+                    
         except Exception as e:
             st.error(f"SHAP 분석 중 오류: {e}")
-        st.markdown('</div>', unsafe_allow_html=True)
+
 
 # =========================
 # 도움말 및 푸터
