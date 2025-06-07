@@ -312,7 +312,11 @@ if not input_df.empty:
                     '일상생활 스트레스', '암에 대한 두려움', '거주 지역', '결혼출산 필수성',
                     '가족관계 만족도', '만성질환 여부'
                 ]
-                shap_vals = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
+                shap_values = explainer.shap_values(X)
+                if isinstance(shap_values, list):
+                    shap_vals = shap_values[0]
+                else:
+                    shap_vals = shap_values
                 tab1, tab2, tab3 = st.tabs(["📊 SHAP Force Plot", "📈 Feature Impact", "📋 Summary"])
                 with tab1:
                     st.markdown("#### SHAP Force Plot")
