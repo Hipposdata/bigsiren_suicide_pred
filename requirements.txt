@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+matplotlib
+pickle5
+shap
+streamlit-shap
+plotly
+bz2file
+scikit-learn
+lightgbm
