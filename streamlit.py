@@ -8,9 +8,6 @@ from streamlit_shap import st_shap
 import plotly.graph_objects as go
 import bz2
 
-
-# SHAP 경고 메시지 필터링
-warnings.filterwarnings('ignore', message='LightGBM binary classifier with TreeExplainer shap values output has changed to a list of ndarray')
 # =========================
 # 매핑 딕셔너리 정의 (코드 ↔ 한글)
 # =========================
